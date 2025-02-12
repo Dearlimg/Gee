@@ -20,6 +20,8 @@ type Context struct {
 
 	handlers []HandlerFunc
 	index    int
+
+	engine *Engine
 }
 
 func (c *Context) newContext(w http.ResponseWriter, req *http.Request) *Context {
@@ -86,10 +88,15 @@ func (c *Context) JSON(code int, obj interface{}) {
 	}
 }
 
-func (c *Context) HTML(code int, html string) {
+func (c *Context) HTML(code int, name string, data interface{}) {
+	//c.SetHeader("Content-Type", "text/html")
+	//c.Status(code)
+	//c.Writer.Write([]byte(html))
 	c.SetHeader("Content-Type", "text/html")
 	c.Status(code)
-	c.Writer.Write([]byte(html))
+	if err := c.engine.htmlTemplates.ExecuteTemplate(c.Writer, name, data); err != nil {
+		c.Fail(500, err.Error())
+	}
 }
 
 func (c *Context) Data(code int, data []byte) {
