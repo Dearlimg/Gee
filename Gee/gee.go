@@ -3,6 +3,8 @@ package gee
 import (
 	"log"
 	"net/http"
+	"strings"
+	"time"
 )
 
 // type HandlerFunc func(http.ResponseWriter, *http.Request)
@@ -20,6 +22,17 @@ type RouterGroup struct {
 	middlewares []HandlerFunc
 	parent      *RouterGroup
 	engine      *Engine
+}
+
+func Logger() HandlerFunc {
+	return func(c *Context) {
+		// Start timer
+		t := time.Now()
+		// Process request
+		c.Next()
+		// Calculate resolution time
+		log.Printf("[%d] %s in %v", c.StatusCode, c.Req.RequestURI, time.Since(t))
+	}
 }
 
 func New() *Engine {
@@ -79,6 +92,21 @@ func (engine *Engine) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	//} else {
 	//	fmt.Fprintf(w, "404 NOT FOUND: %s\n", req.URL)
 	//}
+	//------------------------------
+	//c := newContext(w, req)
+	//engine.router.handle(c)
+	//-------------------------------
+	var middlewares []HandlerFunc
+	for _, group := range engine.groups {
+		if strings.HasPrefix(req.URL.Path, group.prefix) {
+			middlewares = append(middlewares, group.middlewares...)
+		}
+	}
 	c := newContext(w, req)
+	c.handlers = middlewares
 	engine.router.handle(c)
+}
+
+func (group *RouterGroup) Use(middlewares ...HandlerFunc) {
+	group.middlewares = append(group.middlewares, middlewares...)
 }
