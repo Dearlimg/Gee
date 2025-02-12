@@ -5,6 +5,7 @@ import (
 )
 
 // type HandlerFunc func(http.ResponseWriter, *http.Request)
+// 函数签名
 type HandlerFunc func(c *Context)
 
 type Engine struct {
